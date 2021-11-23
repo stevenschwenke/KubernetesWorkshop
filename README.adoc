@@ -2,70 +2,62 @@
 
 = Kubernetes Workshop
 
-This repository consists of notes and links regarding Kubernetes. It is named "workshop", but can only be considered to be the base for a real workshop. The main source of this repository is the great https://www.udemy.com/course/learn-kubernetes[Udemy workshop Kubernetes for the Absolute Beginners by Mumshad Mannambeth].
+This repository consists of notes and links regarding Kubernetes with the **version of at least 1.18**. It is named
+"workshop", but can only
+be considered
+to be the base for a real workshop. The main source of this repository is the great https://www.udemy.com/course/learn-kubernetes[Udemy workshop Kubernetes for the Absolute Beginners by Mumshad Mannambeth] and the https://www.udemy.com/course/docker-mastery/[Docker Mastery: with Kubernetes +Swarm from a Docker Captain by Bret Fisher]
 
-== Kubernetes
+== Introduction
+* https://kubernetes.io/
 * aka "K8" or "K8s"
-* developed by Google
-* Kubernetes supports other container runtimes than Docker, such as rkt ("rocket") or CRI-O ("cryo")
+* = Container orchestration = runs on top of Docker and adds a set of APIs to manage containers across servers
+* developed by Google, released in 2015
+* Kubernetes supports other container runtimes than Docker, such as rkt ("rocket") or CRI-O
+* a lot of distributions like Rancher, Red Hat OpenShift, VMWare Tanzu, Amazon Elastic Kubernetes Service (EKS) - all
+based on the https://github.com/kubernetes/kubernetes[original GitHub version of Kubernetes]
 
-=== "Play with Kubernetes"
+
+== Kubernetes Components
+* https://kubernetes.io/docs/concepts/overview/components/[official documentation]
+* *Node*
+** = machine (physical or virtual)
+** in the past called "minions"
+** has **kubelet**-agent on it so can interact with master (delivering health information to master, receiving commands
+from master) and also **kube-proxy**
+* *Cluster*
+** = set of nodes
+* *master* = *control plane*
+** = multiple nodes that manage the other nodes in the cluster
+** has kube-apiserver on it so can be interacted with via command line
+** has etcd key-value-store on it to store all data used to manage the cluster
+** has controller-manager and scheduler (for distributing work or containers across multiple nodes) on it to work with worker nodes
+* *kubectl* = "kube control" = CLI
+** used to deploy and manage applications on a Kubernetes cluster
+** run application on cluster (creates a new deployment, replica set and pod)
+
+== Options for Using Kubernetes
+=== Remotely via browser
+==== "Play with Kubernetes"
 * https://labs.play-with-k8s.com
 * test environment to start using K8s
 * not persisted, will be reset after some time
 
-=== EKS on AWS
-* https://aws.amazon.com/eks/
-* $0.10 / hour for each created cluster = ~ $67 - $75 / month only for cluster
-* for example, two additional t3.small instances for $0.0208 per Hour each = ~ up to $ 31 / month
-* monthly cost for reasonable application on managed Kubernetes Cluster on AWS: *$106*
+==== Katacoda
+* https://www.katacoda.com/courses/kubernetes/playground
+* similar to "Play with Kubernetes"
 
-== Fundamentals
-* "Node" 
-** = machine (physical or virtual)
-** in the past called "minions"
-** has kubelet-agent on it so can interact with master (delivering health information to master, receiving commands from master)
-* "Cluster"
-** = set of nodes
-* "master"
-** = node that manages the other nodes in his cluster
-** has kube-apiserver on it so can be interacted with via command line
-** has etcd key-value-store on it to store all data used to manage the cluster
-** has controller-manager and scheduler (for distributing work or containers across multiple nodes) on it to work with worker nodes
-* kubectl = "kube comannd line tool", "kube ctl" or "kube control"
-** used to deploy and manage applications on a Kubernetes cluster
-** run application on cluster (creates a new deployment, replica set and pod, see below):
-----
-kubectl run hello-minikube
-----
-** get information about cluster:
-----
-kubectl cluster-info
-----
-** get all nodes in cluster:
-----
-kubectl get nodes
-----
+==== KodeKloud
+* https://kodekloud.com
+* Specialized Learn-by-Doing-Platform
 
-== Setup Kubernetes
-=== Options
-* Local Installation
+=== Local Installation
 ** https://kubernetes.io/docs/setup/learning-environment/minikube/[Minikube]
 *** "Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes cluster inside a Virtual Machine (VM) on your laptop for users looking to try out Kubernetes or develop with it day-to-day."
 ** https://microk8s.io[microk8s]
 *** "A single package of k8s for 42 flavours of Linux. Made for developers, and great for edge, IoT and appliances."
-* Hosting at Cloud Providers
-** install K8 yourself at Google Cloud Platform, AWS or Azure
-* Specialized Learn-by-Doing-Platform
-** https://kodekloud.com[KodeKloud]
 
-=== Installing Minikube
-* necessary for installation on Windows:
-** Hypervisor
-** kubectl
-** Minikube
-* https://kubernetes.io/docs/tasks/tools/install-minikube/
-* needs admin-rights on Windows!
+=== Hosting at Cloud Providers
+* install K8 yourself at Google Cloud Platform, AWS or Azure or use services such as EKS
 
 === Tooling
 * https://plugins.jetbrains.com/plugin/10485-kubernetes[Plugin for editing Kubernetes files in IntelliJ IDEA]
@@ -78,9 +70,17 @@ kubectl get nodes
 * but: one specific application can not have multiple instances in a pod!
 * for example: one pod can hold several different applications, but not two of the same kind
 * containers inside a pod can talk to each other via localhost and share same storage
-* (starting from a scratch Kubernetes cluster) create first pod named "nginx", download nginx image and run in new pod:
+
+=== Defining Pod via CLI
+* a simple pod named mynginx which downloads the nginx image and runs it can be created with:
 ----
-kubectl run nginx --image=nginx
+kubectl run mynginx --image nginx
+----
+
+**HOWEVER**, a single pod should not be created by itself manually. Instead, a _deployment_ should be created with:
+
+----
+kubectl create deployment mynginx --image nginx
 ----
 * list of pods:
 ----
@@ -98,14 +98,25 @@ kubectl describe pod mypodname
 ----
 kubectl get pods -o wide
 ----
-* get all ressources:
+* get all resources:
 ----
 kubectl get all
 ----
 
+The last command demonstrates that with creating a deployment, several objects have been created:
+
+* A pod (with the actual container running in it) wich is wrapped by ...
+* a replica set and ...
+* a deployment that manages replica sets.
+
+All the formerly created objects can be deleted with
+----
+kubectl delete deployment mynginx
+----
+
 === Defining Pod via yaml
 
-* Kubernetes definition file always includes four required fields:
+* Kubernetes' definition file always includes four required fields:
 ** _apiVersion_
 ** _kind_
 ** _metadata_
@@ -131,6 +142,9 @@ spec:
     - name: backend-container
       image: redis
 ----
+----
+kubectl apply -f pod-definition.yml
+----
 
 * _apiVersion_ = version of Kubernetes API to create object. Some Kinds with its versions:
 ** POD => v1
@@ -142,14 +156,32 @@ spec:
 ** under _labels_ also custom values are allowed
 * _spec_ = "what is inside the pod"; different depending on what _kind_ is created (if _kind_ = "Pod", then _spec_ includes containers)
 
-* create pod:
+== Inspecting Deployment Objects
+* (as seen above), **list instances** of objects with
 ----
-kubectl create -f pod-definition.yml
+kubectl get pods
+kubectl get nodes
+kubectl get all
 ----
-* get information about pod:
+* _get_ has a **watch-mode** which means it will add a new line when new information becomes available:
+----
+kubectl get pods -w
+----
+* get information about a **specific pod**:
 ----
 kubectl describe pod myapp-pod
 ----
+* see **logs** of a **specific** pod:
+----
+kubebctl logs deployment/mynginx
+kubebctl logs deployment/mynginx --follow
+kubebctl logs deployment/mynginx --tail 3
+----
+* see **logs** of **multiple** pods needs a common label of all these logs, for example name of _deployment_:
+----
+kubectl logs -l run=my-deployment
+----
+
 
 == Replication Controller / Replica Set
 * = process that monitors the pods
@@ -281,7 +313,7 @@ kubectl delete pod mycreatedpod
 ** Conceptional, "deployment" in Kubernetes contains "Replica Set" which contain "Pods".
 * definition is exactly similar to definition of replica set, except for _kind_:
 
-deplyoment-definition.yml
+deployment-definition.yml
 [source,yaml]
 ----
 apiVersion: apps/v1
@@ -355,12 +387,68 @@ kubectl rollout undo deployment/myapp-deployment
 
 
 == Services
-* enable communication between various components inside and outside of the application
-* for example: map request from outside through the node to the pod inside of the node -> known as "NodePort-service"
+* services = way of making things inside the cluster available from outside
+* service = stable address for pods (whose addresses will change when being re-created)
+* for example: map request from outside through the node to the pod inside the node -> known as "NodePort-service"
 * types of services:
-** NodePort
 ** ClusterIP
+*** default
+*** single, internal virtual IP
+*** only reachable from within cluster (from other nodes and pods)
+** NodePort
+*** for communication from outside the cluster to the nodes in the cluster, using the actual IPs of the objects in the cluster
 ** LoadBalancer
+*** for traffic coming in from the outside
+*** often through cloud provider like AWS ELB
+** External Name
+*** for when objects in the cluster need to talk to the outside world
+*** adds CNAME DNS record to CoreDNS
+
+=== ClusterIP
+* IPs of pods dynamic: pods (and nodes) can go down all the time!
+* internal communication (like frontend to backend to database) within application can not rely on IPs of pods
+* solution: service that groups pods of a layer of the application together so that requests from other layers can target this service instead of the pods directly
+* hence, each layer may scale without impacting other layers or inter-layer-communication
+
+==== Create ClusterIP Service via yml
+
+clusterip-service-definition.yml
+[source,yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end
+spec:
+  selector:
+    app: myapp
+    type: back-end
+  ports:
+    - port: 80
+      targetPort: 80
+  type: ClusterIP
+----
+
+==== Create ClusterIP Service via CLI
+* creating a deployment with some nodes first:
+----
+kubectl create deployment httpenv --image=bretfisher/httpenv
+kubectl scale deployment/httpenv --replicas=5
+kubectl expose deployment/httpenv --port 8888
+----
+* default type for _kubectl expose_ is ClusterIP; in the examples below, a specific type is given as a parameter to create other kinds of services
+
+==== Reaching ClusterIP Service
+* remember: localhost:8888 can not be reached from the host; the exposed port is only available from inside the
+cluster! However, on Linux, it can be reached by:
+----
+curl [ip of service]:8888
+----
+* IP of service can be seen with
+----
+kubectl get service
+----
+
 
 === NodePort
 * maps port on node to port on pod to grant access to application from outside
@@ -368,7 +456,9 @@ kubectl rollout undo deployment/myapp-deployment
 ** port on pod where application is running = *target port*
 ** port on service itself = "port"
 ** port on the node = *node port* (used to access node from externally) -> valid range: 30000 - 32767
-* creating service:
+* creating a NodePort service will automatically create a ClusterIP service
+
+==== Create NodePort Service via yml
 
 service-definition.yml
 [source,yaml]
@@ -398,15 +488,27 @@ kubectl create -f service-definition.yml
 kubectl get services
 ----
 * with above definition, running application accessible via IP of worker-node plus designated port (IP of node may differ from this example)
+* attention: unlike in Docker, the order of the ports is reversed: _8888:32334/TCP_ means "8888 inside the cluster, 32334 host" (host port is determined automatically)
 ----
-curl http://192.168.1.2:30008
+curl 192.168.1.2:30008
 ----
 * often, multiple pods on multiple nodes running with same labels and same application
 ** NodePort-service created as above will automatically balance load between all pods = built-in load balancer
 
-=== Alternative approach to NodePort Service: Creating LoadBalancer-Service
-* didn't manage to get things running with above example; service was not accessible from outside
-* alternative solution via https://stackoverflow.com/questions/48857092/how-to-expose-nginx-on-public-ip-using-nodeport-service-in-kubernetes[stackoverflow]: create https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/[external LoadBalancer]:
+==== Create NodePort Service via CLI
+----
+kubectl expose deployment/httpenv --port 8888 --name httpenv-np --type NodePort
+----
+
+=== LoadBalancer
+* normally, load balancer has to be provided by external infrastructure like AWS ELB
+* however, Docker Desktop provides an out-of-the-box load balancer for Kubernetes
+* publishes the _--port_ on localhost
+* creating a LoadBalancer service will automatically create a NodePort and a ClusterIP service
+
+==== Create LoadBalancer Service via yml
+
+* https://stackoverflow.com/questions/48857092/how-to-expose-nginx-on-public-ip-using-nodeport-service-in-kubernetes[stackoverflow]: create https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/[external LoadBalancer]:
 
 loadbalancer-service-definition.yml
 [source,yaml]
@@ -430,33 +532,98 @@ spec:
 kubectl get services
 ----
 
-=== ClusterIP
-* IPs of pods dynamic: pods (and nodes) can go down all the time!
-* hence internal communication (like frontend to backend to database) within application can not rely on IPs of pods
-* solution: service that groups pods of a layer of the application together so that requests from other layers can target this service instead of the pods directly
-* hence, each layer may scale without impacting other layers or inter-layer-communication
-* create clusterIP-service:
+==== Create LoadBalancer Service via CLI
 
-clusterip-service-definition.yml
-[source,yaml]
 ----
-apiVersion: v1
-kind: Service
-metadata:
-  name: back-end
-spec:
-  selector:
-    app: myapp
-    type: back-end
-  ports:
-    - port: 80
-      targetPort: 80
-  type: ClusterIP
+kubectl expose deployment/httpenv --port 8888 --name httpenv-lb --type LoadBalancer
+
+curl localhost:8888
+----
+
+== Generators
+* many commands don't need every argument
+* missing arguments resolved using templates called generators
+* every resource in Kubernetes has a specification that can be output with --dry-run -o yaml:
+----
+kubectl create deployment sample --image nginx --dry-run -o yaml
+----
+* above is a client-side dry-run which ignores resources already created server-side
+* server-side dry-run, acknowledging all exiting resources:
+----
+kubectl apply -f app.yml --server-dry-run
+----
+* see diff visually with
+----
+kubectl diff -f app.yml
+----
+
+== Writing yaml Files
+* because spec-part of yaml files differs heavily between different kinds of resources, hard to write yaml-files
+
+=== kind
+* list resources with
+----
+kubectl api-resources
+----
+* use values in column "KIND" in yaml-files
+
+=== apiVersion
+* list all api-versions with
+----
+kubectl api-versions
+----
+
+=== metadata
+* only _name_ is required
+
+=== spec
+* list all resource types with
+----
+kubectl explain services --recursive
+----
+* show specs for kind _service_ with
+----
+kubectl explain services.spec
+----
+* this also allows digging deeper with
+----
+kubectl explain deployment.spec.template.spec
 ----
 
 == Complex Example
 * see https://github.com/stevenschwenke/example-voting-app-kubernetes-v2[this github repo], which is a fork of the repo used in the Udemy course
 
+== Labels and Annotations
+
+* in yaml in the metadata section, resources can be labeled with lists of key and value
+* some labels like _matchLabels_ in services are non-optional and link resources to each other, for example services
+to pods with the same label
+* however, also custom labels possible
+* custom labels important for identifying resources, for example tier: frontend, app: api, env: prod, customer:my-customer
+* not meant to hold complex, large or non-identifying info, which is what annotations are for
+* usage example filtering:
+----
+kubectl get pods -l app=nginx
+----
+* usage example applying only matching labels:
+----
+kubectl apply -f myfile.yaml -f app=nginx
+----
+
+== Storage
+* recommendation in general: use databases as managed services from cloud provider!
+* if stateful containers have to run in Kubernetes, use _StatefulSets_ = resource for making pods more long-lived
+* _Volumes_ are tied to the lifecycle of a pod, _PersistentVolumes_ are created at cluster level and outlive pods
+* new solution: Container Storage Interface (CSI)
+
+== Namespaces
+* limit scope
+* a.k.a. "virtual clusters"
+* not related to Docker/Linux namespaces
+----
+kubectl get namespaces
+kubectl get all --all-namespaces
+----
 
 == Kubeadm
 * https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/
@@ -469,21 +636,30 @@ spec:
 ** POD network / cluster network between all nodes initialized
 ** each worker node joined to master node
 
+== Dashboards
+* different solutions available
+* dashboard from Kubernetes: https://github.com/kubernetes/dashboard
+* others available in/with Rancher, Docker Enterprise, OpenShift
 
 == Best Practices and "Tricks"
-* Instead of replica sets, deployments are used to create a Kubernetes cluster as they create replica sets automatically and offer additional functions like rollback and update.
-* Pod- and replica set definition files can be deleted if the cluster is created with deployments. The deployment-definition-files include the template with all the information of how to create the pods.
 * Label all parts (deployments and services) of an application with the name of the application, so that all parts have the same label and can be searched and filtered easily.
 * Complex cluster definitions with multiple files can be easily created with one command by placing all files in one folder and executing the following within that folder:
 ----
 kubectl create -f .
 ----
+* Kubernetes supports three management approaches: imperative via CLI-commands, declarative via yaml-files and some commands that are imperative but use yaml-files. It's best to get used to the purely declarative mode via yaml-files as soon as possible and only use
+----
+kubectl apply -f file.yml
+kubectl apply -f my-folder-with-lots-of-yaml/
+kubectl apply -f https://my-site.com/my.yml
+----
+* using the purely declarative mode with yaml-files also allows versioning every change with Git (whereas using CLI-commands will not leave a trace to understand what has been done later on)
 
 
 == AWS
-Hints and notes for working with Kubernets on AWS
+Hints and notes for working with Kubernetes on AWS
 
 * https://medium.com/faun/create-your-first-application-on-aws-eks-kubernetes-cluster-874ee9681293
 * after creating the cluster in EKS, no nodes are created
-** https://blog.replicated.com/hands-on-with-aws-elastic-container-service-for-kubernetes/["What EKS doesn’t do: Node provisioning. Unlike other managed Kubernetes services, EKS leaves the task of provisioning nodes to the user. However, its docs do include CloudFormation templates for provisioning the remote nodes and creating an autoscaling group. While it’s sort of great that you have access to all of these underlying AWS items, it’s not really a managed service if you have to manage all of this yourself."]
+** https://blog.replicated.com/hands-on-with-aws-elastic-container-service-for-kubernetes/["What EKS doesn't do: Node provisioning. Unlike other managed Kubernetes services, EKS leaves the task of provisioning nodes to the user. However, its docs do include CloudFormation templates for provisioning the remote nodes and creating an autoscaling group. While it’s sort of great that you have access to all of these underlying AWS items, it’s not really a managed service if you have to manage all of this yourself."]
 ** https://gruntwork.io/guides/kubernetes/how-to-deploy-production-grade-kubernetes-cluster-aws/#worker-nodes-2["While EKS will run the control plane for you, it’s up to you to create the worker nodes"]
