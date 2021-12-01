@@ -538,6 +538,14 @@ curl localhost:8888
 === Best Practice for Services
 *The preferred way to expose a service externally is using a ClusterIP service plus ingress.*
 
+== Ingress
+* manages external access to the services in a cluster
+* requires an ingress controller like NGinX or Traefik installed on Kubernetes cluster
+* each ingress must refer to a service
+
+== NetworkPolicy
+* = virtual firewall rules for control how groups of pods communicate to each other and other network endpoints
+
 == Generators
 * many commands don't need every argument
 * missing arguments resolved using templates called generators
