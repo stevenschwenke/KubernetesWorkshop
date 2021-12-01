@@ -615,13 +615,36 @@ kubectl apply -f myfile.yaml -f app=nginx
 * new solution: Container Storage Interface (CSI)
 
 == Namespaces
+* different namespaces act as totally independent and non-connected clusters
 * limit scope
 * a.k.a. "virtual clusters"
 * not related to Docker/Linux namespaces
+* create a namespace with *namespace.yml*:
+
+[source, yaml]
+----
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mynamespace
+  labels:
+    app.kubernetes.io/name: ${namespaceName}
+----
+----
+kubectl create -f namespace.yml
+----
+
+* get information about namespaces:
 ----
 kubectl get namespaces
 kubectl get all --all-namespaces
 ----
+* for every command that should be executed in the namespace, "-n" has to be added, for example:
+----
+kubectl -n mynamespace create -f .
+----
+* if no namespace argument is given, the command is executed for namespace "default"
+* "default" should only be used in very simple test scenarios
 
 == Kubeadm
 * https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/
