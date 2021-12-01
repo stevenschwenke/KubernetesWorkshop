@@ -183,53 +183,9 @@ kubectl logs -l run=my-deployment
 ----
 
 
-== Replication Controller / Replica Set
-* = process that monitors the pods
-* main task: "specified number of pods should be running!":
-** can help running multiple instances of same pod so crashing pod doesn't create downtime
-** if running only one instance of pod, replication controller helps bringing crashed container back up again
-* also load balancing and scaling between nodes => replication controller spans multiple nodes of same cluster
-* "replication controller" != "replica set" !
-** replication controller deprecated, replaced by replica set
-
-=== Replication Controller
-* creating replication controller:
-
-rc-definition.yml
-[source,yaml]
-----
-apiVersion: v1
-kind: ReplicationController
-metadata:
-  name: myapp-rc
-  labels:
-    app: myapp
-    type: front-end
-spec:
-  template:
-    metadata:
-      name: myapp-pod
-      labels:
-        app: myapp
-        type: front-end
-    spec:
-      containers:
-        - name: nginx-container
-          image: nginx
-  replicas: 1
-----
-
-* hint: contents of _spec_ -> _template_ equals content of pod-definition.yml
-* create with:
-
-----
-kubectl create -f rc-definition.yml
-----
-
-* get replication controllers:
-----
-kubectl get replicationcontroller
-----
+== Replica Set
+* "replication controller" != "replica set" ! Replication controller deprecated, replaced by replica set
+* main task of replica set: "specified number of pods should be running!":
 
 === Replica Set
 * creating replica set:
