@@ -335,6 +335,7 @@ kubectl rollout undo deployment/myapp-deployment
 
 == Network
 * nodes have IP addresses because they are physical machines
+* also, nodes are given a range of IP-addresses to assign them to the pods running inside the nodes
 * IP addresses for container concepts:
 ** in *Docker*, each *container* gets an IP address
 ** in *Kubernetes*, each *pod* gets an IP address
@@ -344,9 +345,9 @@ kubectl rollout undo deployment/myapp-deployment
 
 
 == Services
-* services = way of making things inside the cluster available from outside
-* service = stable address for pods (whose addresses will change when being re-created)
-* for example: map request from outside through the node to the pod inside the node -> known as "NodePort-service"
+* in Kubernetes, nodes and thereby pods are ephemeral and can be assigned new IPs all the time, hence reaching them
+directly from outside is impossible
+* services = way of making things inside the cluster available from outside; provide stable address for pods
 * types of services:
 ** ClusterIP
 *** default
@@ -360,12 +361,14 @@ kubectl rollout undo deployment/myapp-deployment
 ** External Name
 *** for when objects in the cluster need to talk to the outside world
 *** adds CNAME DNS record to CoreDNS
+* https://www.youtube.com/watch?v=T4Z7visMM4E[Great explanation of Kubernetes on YouTube with nice visualizations]
 
 === ClusterIP
-* IPs of pods dynamic: pods (and nodes) can go down all the time!
-* internal communication (like frontend to backend to database) within application can not rely on IPs of pods
-* solution: service that groups pods of a layer of the application together so that requests from other layers can target this service instead of the pods directly
-* hence, each layer may scale without impacting other layers or inter-layer-communication
+* provides single, internal IP with a port that itself is accessible at
+* No access to service from outside! For that, additional ingress!
+* ingress targets service for specific requests and forwards them to this service
+* targeting of service by ingress done by name of the service
+* ClusterIP-service may also be targeted by pods running in the cluster, for example a backend trying to reach the database
 
 ==== Create ClusterIP Service via yml
 
@@ -386,6 +389,35 @@ spec:
   type: ClusterIP
 ----
 
+* requests landing at service are forwarded to one of the pods that have *all* the labels referenced in _selector_
+* pods that get traffic from a service = services "endpoints"
+* _selector_ = key-value-pairs, free to choose
+* _port_ = port the service listens to for requests to forward (multiple ports can be opened by adding more entries
+in the _ports_-list)
+* _targetPort_ = port of pod that request will be send to by service
+
+===== Multi-Port Service
+* service exposing more than one port has to name the entries in the _ports_-list:
+[source,yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: back-end
+spec:
+  selector:
+    app: myapp
+    type: back-end
+  ports:
+    - name: web
+      port: 80
+      targetPort: 80
+    - name: mongodb
+      port: 27017
+      targetPort: 27017
+  type: ClusterIP
+----
+
 ==== Create ClusterIP Service via CLI
 * creating a deployment with some nodes first:
 ----
@@ -396,8 +428,7 @@ kubectl expose deployment/httpenv --port 8888
 * default type for _kubectl expose_ is ClusterIP; in the examples below, a specific type is given as a parameter to create other kinds of services
 
 ==== Reaching ClusterIP Service
-* remember: localhost:8888 can not be reached from the host; the exposed port is only available from inside the
-cluster! However, on Linux, it can be reached by:
+* remember: localhost:8888 can not be reached from the host; the exposed port is only available from inside the cluster! However, on Linux, it can be reached by:
 ----
 curl [ip of service]:8888
 ----
@@ -408,12 +439,17 @@ kubectl get service
 
 
 === NodePort
-* maps port on node to port on pod to grant access to application from outside
+* NodePort service is accessible on a static port of each worker node in the cluster
+* comparison with ClusterIP service:
+** ClusterIP is only available within the cluster
+** NodePort opens a fixed port on each worker node to the outside
+* with NodePort possible: direct communication from browser to a specific worker node within the cluster on a given port
 * three ports involved, named from the viewpoint of the server:
 ** port on pod where application is running = *target port*
 ** port on service itself = "port"
 ** port on the node = *node port* (used to access node from externally) -> valid range: 30000 - 32767
-* creating a NodePort service will automatically create a ClusterIP service
+* creating a NodePort service will automatically create a ClusterIP service for the _port_
+* because NodePort will open every worker node to the public, this is not a secure option
 
 ==== Create NodePort Service via yml
 
@@ -428,13 +464,15 @@ spec:
   type: NodePort
   ports:
     - targetPort: 80
-      port: 80
+      port: 8080
       nodePort: 30008
   selector:
     app: myapp
     type: front-end
 ----
 
+* with above configuration, the external browser can call [node-ip]:30008, is then forwarded to the automaticaly
+created ClusterIP service's port 8080 which forwards to the pod's port 80.
 * connection between service and pod via labels
 * creating service:
 ----
@@ -496,6 +534,9 @@ kubectl expose deployment/httpenv --port 8888 --name httpenv-lb --type LoadBalan
 
 curl localhost:8888
 ----
+
+=== Best Practice for Services
+*The preferred way to expose a service externally is using a ClusterIP service plus ingress.*
 
 == Generators
 * many commands don't need every argument
