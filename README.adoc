@@ -188,7 +188,8 @@ kubectl logs -l run=my-deployment
 * main task of replica set: "specified number of pods should be running!":
 
 === Replica Set
-* creating replica set:
+* Replica set can be created directly like shown below. However, it's supposed to be managed by a deployment instead.
+* creating replica set directly (not recommended!):
 
 replicaset-definition.yml
 [source,yaml]
