@@ -618,9 +618,22 @@ kubectl apply -f myfile.yaml -f app=nginx
 
 == Storage
 * recommendation in general: use databases as managed services from cloud provider!
-* if stateful containers have to run in Kubernetes, use _StatefulSets_ = resource for making pods more long-lived
-* _Volumes_ are tied to the lifecycle of a pod, _PersistentVolumes_ are created at cluster level and outlive pods
-* new solution: Container Storage Interface (CSI)
+
+=== StatefulSet
+* if stateful containers have to run in Kubernetes, use *StatefulSets*
+* = resource for making pods more long-lived
+* manages deployment and scaling of a set of pods so that they are more predictable and can be used to persist data
+
+=== PersistentVolumeClaim
+* = claim for storage on a persistent volume by a stateful set or deployment
+* persistent volume claims are not deleted when associated stateful set or deployment is uninstalled from cluster =
+data outlives nodes
+
+=== PersistentVolume
+* = piece of storage that can be added as a resource to the cluster
+* have their own lifecycles, independent of cluster
+* hide implementation of actual storage and can be AWS EBS or AWS EFS
+* PersistentVolumes are never handled directly, only via PersistentVolumeClaims
 
 == Namespaces
 * different namespaces act as totally independent and non-connected clusters
