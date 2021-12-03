@@ -12,6 +12,7 @@ spec:
       labels:
         app: stevens-first-kubernetes-app
     spec:
+      serviceAccountName: ssc-cxp-demo-service-account
       containers:
         - name: stevens-first-app
           image: docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world:latest
