@@ -1037,6 +1037,70 @@ CLI-commands will not leave a trace to understand what has been done later on)
 the application. Instead, create another pod for that task. Because the main application can be executed
 on multiple pods, all of these pods would execute the cron job when it is implemented within the main application.
 
+== kubeconfig files
+* kubectl connects to a specific cluster with information from kubeconfig-file
+* kubeconfig usually named ${clusterName}.yaml and located in $Home/.kube or %USERPROFILE%\.kube
+* example kubeconfig-file:
+
+[source, yaml]
+----
+apiVersion: v1
+clusters:
+- cluster:
+    certificate-authority-data: LS...tLQo=
+    server: https://10.119.16.228:6443
+  name: kubernetes
+contexts:
+- context:
+    cluster: kubernetes
+    user: kubernetes-admin
+  name: kubernetes-admin@kubernetes
+current-context: kubernetes-admin@kubernetes
+kind: Config
+preferences: {}
+users:
+- name: kubernetes-admin
+  user:
+    client-certificate-data: LS0t...LQo=
+    client-key-data: LS0..
+----
+
+* for cubectl to use this:
+
+----
+export KUBECONFIG=$HOME/.kube/myk8s.yaml
+----
+or
+----
+set KUBECONFIG=%USERPROFILE%\.kube\myk8s.yaml
+----
+
+* if multiple cluster are managed, multiple config-files:
+----
+export KUBECONFIG=$HOME/.kube/cluster1.yaml:/cxp-ide/data/kubernetes/.kube/cluster2.yaml
+----
+or
+----
+set KUBECONFIG=%USERPROFILE%\.kube\cluster1.yaml;C:\cxp-ide\data\kubernetes\.kube\cluster2.yaml
+----
+
+* switch between contexts (name of context in config-file):
+----
+$ kubectl config use-context kubernetes-admin@kubernetes
+----
+
+* get name of current cluster:
+----
+$ kubectl config current-context
+----
+
+* get information about all contexts:
+----
+$ kubectl config view
+----
+
+* note: AWS EKS uses a different way of authenticating, the _aws-iam-authenticator_
+
 == Tools
 === Lens
 * https://k8slens.dev
