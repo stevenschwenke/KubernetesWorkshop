@@ -976,6 +976,12 @@ default   1         13d
 * dashboard from Kubernetes: https://github.com/kubernetes/dashboard
 * others available in/with Rancher, Docker Enterprise, OpenShift
 
+== Helm
+* https://www.youtube.com/watch?v=-ykwb1d0DXU[great introduction on YouTube]
+* Helm is
+** a package manager for ready-to-use sets of Kubernetes resources and
+** a templating engine for abstracting Kubernetes files
+
 == Best Practices and "Tricks"
 * *Label* all parts (deployments and services) of an application with the name of the application, so that all parts
 have the same label and can be searched and filtered easily.
