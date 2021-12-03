@@ -532,6 +532,7 @@ kubectl expose deployment/httpenv --port 8888 --name httpenv-np --type NodePort
 * however, Docker Desktop provides an out-of-the-box load balancer for Kubernetes
 * publishes the _--port_ on localhost
 * creating a LoadBalancer service will automatically create a NodePort and a ClusterIP service
+* if a load balancer is used, no ingress has to be created
 
 ==== Create LoadBalancer Service via yml
 
