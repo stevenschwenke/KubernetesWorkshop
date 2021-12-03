@@ -955,8 +955,10 @@ $ kubectl get serviceaccounts
 NAME      SECRETS   AGE
 default   1         13d
 ----
-[ ] Add Service-Account
-[ ] Make resources run in service-account
+
+== Lens
+* https://k8slens.dev
+* Tool for monitoring and controlling Kubernetes clusters
 
 == Kubeadm
 * https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/
