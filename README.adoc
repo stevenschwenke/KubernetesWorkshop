@@ -62,6 +62,39 @@ from master) and also **kube-proxy**
 === Tooling
 * https://plugins.jetbrains.com/plugin/10485-kubernetes[Plugin for editing Kubernetes files in IntelliJ IDEA]
 
+== Writing yaml Files
+* because spec-part of yaml files differs heavily between different kinds of resources, hard to write yaml-files
+
+=== kind
+* list resources with
+----
+kubectl api-resources
+----
+* use values in column "KIND" in yaml-files
+
+=== apiVersion
+* list all api-versions with
+----
+kubectl api-versions
+----
+
+=== metadata
+* only _name_ is required
+
+=== spec
+* list all resource types with
+----
+kubectl explain services --recursive
+----
+* show specs for kind _service_ with
+----
+kubectl explain services.spec
+----
+* this also allows digging deeper with
+----
+kubectl explain deployment.spec.template.spec
+----
+
 == Pods
 * applications don't get installed on nodes directly, instead get wrapped in pods
 * pod = single instance of an application; smallest creatable object in K8
@@ -185,10 +218,9 @@ kubectl logs -l run=my-deployment
 
 == Replica Set
 * "replication controller" != "replica set" ! Replication controller deprecated, replaced by replica set
-* main task of replica set: "specified number of pods should be running!":
-
-=== Replica Set
-* Replica set can be created directly like shown below. However, it's supposed to be managed by a deployment instead.
+* main task of replica set: "specified number of pods should be running!"
+* Replica set can be created directly and scaled like shown below. However, it's supposed to be managed by a deployment
+instead, via a yaml-file
 * creating replica set directly (not recommended!):
 
 replicaset-definition.yml
@@ -258,7 +290,7 @@ kubectl delete pod mycreatedpod
 ----
 
 * Attention: Pods created with the same label as pods in a replica set will be deleted automatically because this label is managed by replica-set!
-* Note: Creating replica sets manually is not the preferred way of managing a cluster! The way to go are deployments (see below).
+* Note: Creating and scaling replica sets manually is not the preferred way of managing a cluster! The way to go are deployments, via yaml-files (see below).
 
 
 == Deployments
@@ -563,41 +595,162 @@ kubectl apply -f app.yml --server-dry-run
 kubectl diff -f app.yml
 ----
 
-== Writing yaml Files
-* because spec-part of yaml files differs heavily between different kinds of resources, hard to write yaml-files
+== Complex Example: Minimal stateless application
+* (an old version of this course included see https://github.com/stevenschwenke/example-voting-app-kubernetes-v2[this
+github repo], which is a fork of the repo used in one of the Udemy courses)
 
-=== kind
-* list resources with
-----
-kubectl api-resources
-----
-* use values in column "KIND" in yaml-files
+The following example is the minimal set of resources needed for a simple, stateless application.
 
-=== apiVersion
-* list all api-versions with
-----
-kubectl api-versions
-----
+The following files can be found in /complex-example-minimal-stateless-application:
 
-=== metadata
-* only _name_ is required
-
-=== spec
-* list all resource types with
 ----
-kubectl explain services --recursive
-----
-* show specs for kind _service_ with
-----
-kubectl explain services.spec
-----
-* this also allows digging deeper with
-----
-kubectl explain deployment.spec.template.spec
+├── app
+│   ├── Dockerfile
+│   ├── index.html
+│   └── readme.adoc
+└── kubernetes
+    ├── deployment-definition.yml
+    ├── ingress.yml
+    ├── network-policy.yml
+    └── service.yml
 ----
 
-== Complex Example
-* see https://github.com/stevenschwenke/example-voting-app-kubernetes-v2[this github repo], which is a fork of the repo used in the Udemy course
+=== A httpd as a Simple Example Application
+The "application" that should be deployed lives in _app_ and consists only of an httpd server that serves a modified
+index.html, as can be seen in *app/Dockerfile*:
+----
+from httpd
+
+COPY index.html /usr/local/apache2/htdocs/
+----
+
+The *app/index.html* simply states some text:
+----
+Hello from Steven!
+----
+
+This Docker container can be build with
+
+----
+docker build -t docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world .
+----
+
+To run it:
+----
+docker container run -p 80:80 --name cxp-hello-world docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world
+----
+
+To use it later in the Kubernetes cluster, it should be pushed to a private Docker repository:
+----
+docker login
+
+docker push docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world
+----
+
+Locally, it can be run with
+----
+docker run --rm -p 80:80 docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world
+----
+
+=== Kubernetes Deployment
+
+The 4 files discussed in this section all live in /kubernetes.
+
+The deployment will manage the pods and the replica set.
+The service will expose the application within the cluster.
+The ingress will expose the application outside the cluster.
+The network policy will allow inbound traffic to the application's pods.
+
+The *deployment-definition.yml* deploys the application above in two nodes with port 80 exposed:
+[source, yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssc-cxp-demo-deployment
+  labels:
+    app: stevens-first-kubernetes-app
+  namespace: cxp-team-heiterbiswolkig
+spec:
+  template:
+    metadata:
+      name: stevens-first-pod
+      labels:
+        app: stevens-first-kubernetes-app
+    spec:
+      containers:
+        - name: stevens-first-app
+          image: docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world:latest
+          ports:
+          - containerPort: 80
+      imagePullSecrets:
+        - name: regcred
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stevens-first-kubernetes-app
+----
+
+The _imagePullSecrets_ references a formerly created secret in Kubernetes that allows pulling the custom image from a
+private image repository.
+
+The *service.yml* creates a ClusterIP service (because that is the default when creating a service) that targets the
+pods with the label "stevens-first-kubernetes-app" and routes port 80 from within the cluster to port 80 of all the
+nodes:
+[source, yaml]
+----
+apiVersion: v1
+kind: Service
+metadata:
+  name: ssc-cxp-demo-service
+  namespace: cxp-team-heiterbiswolkig
+spec:
+  selector:
+    app: stevens-first-kubernetes-app
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80
+----
+
+This *network-policy.yml* allows inbound traffic to all pods matching the given _matchLabels_:
+[source, yaml]
+----
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: ssc-cxp-demo-network-policy
+  namespace: cxp-team-heiterbiswolkig
+spec:
+  podSelector:
+    matchLabels:
+      app: stevens-first-kubernetes-app
+  ingress:
+  - {}
+----
+
+The *ingress.yml* is specified for a specific host and path(s) and routes to the formerly created service:
+[source, yaml]
+----
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ssc-cxp-demo-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - host: insert.your.host.here
+    http:
+      paths:
+      - path: /cxp-team-heiterbiswolkig/ssc-cxp-demo(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: ssc-cxp-demo-service
+            port:
+              number: 80
+----
 
 == Labels and Annotations
 
@@ -666,6 +819,143 @@ kubectl -n mynamespace create -f .
 ----
 * if no namespace argument is given, the command is executed for namespace "default"
 * "default" should only be used in very simple test scenarios
+
+== Highly Available Applications
+=== Deployment Strategy
+* in _deployment_ specification, *deployment strategy* with options:
+** RollingUpdate (default) = replacing pods one by one
+*** requires the application to deal with old and new versions deployed at the same time!
+** Recreate = kill all pods and start anew
+
+=== HorizontalPodAutoscaler
+* scales number of pods in deployment or stateful set depending on metrics like CPU or memory consumption
+* added as a HPA resource to a deployment
+* _HPA Controller_ checks metrics on each application with an HPA resource every 15 seconds and takes action if necessary
+* creating the HPA resource:
+
+[source, yaml]
+----
+apiVersion: autoscaling/v2beta1
+kind: HorizontalPodAutoscaler
+metadata:
+  name: cxp-hello-k8s
+  labels:
+    app.kubernetes.io/name: cxp-hello-k8s
+    app.kubernetes.io/instance: cxp-hello-k8s
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: cxp-hello-k8s
+  minReplicas: 2
+  maxReplicas: 4
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        targetAverageUtilization: 80
+    - type: Resource
+      resource:
+        name: memory
+        targetAverageUtilization: 80
+----
+
+=== PodDiscruptionBudget
+* defines how many pods should be running at any given time if the cluster itself is under maintenance
+* if maintenance activity violates budget, Kubernetes refuses to execute this command
+
+[source,yaml]
+----
+apiVersion: policy/v1beta1
+kind: PodDisruptionBudget
+metadata:
+  name: cxp-hello-k8s
+  labels:
+    app.kubernetes.io/name: cxp-hello-k8s
+    app.kubernetes.io/instance: cxp-hello-k8s
+spec:
+  minAvailable: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cxp-hello-k8s
+      app.kubernetes.io/instance: cxp-hello-k8s
+----
+
+* when using PodDisruptionBudgets, the replica count should be > 1 !
+
+=== Affinity
+* rule, why a pod should (affinity) or should not (anti-affinity) run on a specific worker node
+* can be used for example to spread the application across multiple nodes and even availability zones (in AWS) or to
+make sure that the database runs on the same node as the backend
+
+== Security
+=== PodSecurityContext
+* part of pod template
+* describes privilege and access control settings of a pod or container
+* deployment manifest with pod security context:
+
+[source, yaml]
+----
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cxp-hello-k8s
+  labels:
+    app.kubernetes.io/name: cxp-hello-k8s
+    app.kubernetes.io/instance: cxp-hello-k8s
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: cxp-hello-k8s
+      app.kubernetes.io/instance: cxp-hello-k8s
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: cxp-hello-k8s
+        app.kubernetes.io/instance: cxp-hello-k8s
+    spec:
+      securityContext:
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: cxp-hello-k8s
+          image: "docker.myprivatedockerrepo.eu/cxp/cxp-hello-k8s:1.0.0"
+          imagePullPolicy: IfNotPresent
+          # [..]
+          securityContext:
+            allowPrivilegeEscalation: false
+----
+
+=== Recommended Minimum Set of Security Settings
+* Always run as non-root user (runAsNonRoot == true)
+* Always specify a non-root user as runAsUser
+* Always specify a specific group as runAsGroup (if not set actual group will be 0!)
+* Always set allowPrivilegeEscalation to false
+
+An example for how to run Apaches httpd as non-root user can be found https://takac.dev/docker-run-apache-as-non-root-user-based-on-the-official-image/[here]
+
+=== PodSecurityPolicy
+* enforces a set of security policies for pod on cluster level so that pods that do not apply to these rules cannot
+be run
+
+=== Role Based Access Control (RBAC)
+==== Service Account
+* identity for processes running in pods
+* processes inherit roles or cluster roles given to the service account
+* all access to the Kubernetes API from a pod running with a service account will be checked against granted policies
+* service account bound to the namespace
+* every namespace has a service account called "default"
+
+[source,terminal]
+----
+$ kubectl get serviceaccounts
+NAME      SECRETS   AGE
+default   1         13d
+----
+[ ] Add Service-Account
+[ ] Make resources run in service-account
 
 == Kubeadm
 * https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/

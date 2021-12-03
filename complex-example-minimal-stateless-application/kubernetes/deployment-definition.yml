@@ -1,0 +1,25 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: ssc-cxp-demo-deployment
+  labels:
+    app: stevens-first-kubernetes-app
+  namespace: cxp-team-heiterbiswolkig
+spec:
+  template:
+    metadata:
+      name: stevens-first-pod
+      labels:
+        app: stevens-first-kubernetes-app
+    spec:
+      containers:
+        - name: stevens-first-app
+          image: docker.myprivatedockerrepo.eu/cxp/heiter-bis-wolkig-stevens-hello-world:latest
+          ports:
+          - containerPort: 80
+      imagePullSecrets:
+        - name: regcred
+  replicas: 2
+  selector:
+    matchLabels:
+      app: stevens-first-kubernetes-app

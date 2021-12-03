@@ -1,0 +1,18 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: ssc-cxp-demo-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+spec:
+  rules:
+  - host: cxp.k8s.azure.msgoat.eu
+    http:
+      paths:
+      - path: /cxp-team-heiterbiswolkig/ssc-cxp-demo(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: ssc-cxp-demo-service
+            port:
+              number: 80

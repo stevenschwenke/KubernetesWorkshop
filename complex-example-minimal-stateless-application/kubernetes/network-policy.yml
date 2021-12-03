@@ -1,0 +1,11 @@
+kind: NetworkPolicy
+apiVersion: networking.k8s.io/v1
+metadata:
+  name: ssc-cxp-demo-network-policy
+  namespace: cxp-team-heiterbiswolkig
+spec:
+  podSelector:
+    matchLabels:
+      app: stevens-first-kubernetes-app
+  ingress:
+  - {}
