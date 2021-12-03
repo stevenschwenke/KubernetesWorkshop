@@ -975,18 +975,25 @@ default   1         13d
 * others available in/with Rancher, Docker Enterprise, OpenShift
 
 == Best Practices and "Tricks"
-* Label all parts (deployments and services) of an application with the name of the application, so that all parts have the same label and can be searched and filtered easily.
-* Complex cluster definitions with multiple files can be easily created with one command by placing all files in one folder and executing the following within that folder:
+* *Label* all parts (deployments and services) of an application with the name of the application, so that all parts
+have the same label and can be searched and filtered easily.
+* Complex cluster definitions with multiple files can be easily created with one command by *placing all files in one
+folder* and executing the following within that folder:
 ----
 kubectl create -f .
 ----
-* Kubernetes supports three management approaches: imperative via CLI-commands, declarative via yaml-files and some commands that are imperative but use yaml-files. It's best to get used to the purely declarative mode via yaml-files as soon as possible and only use
+* Kubernetes supports three management approaches: imperative via CLI-commands, declarative via yaml-files and some
+commands that are imperative but use yaml-files. It's best to *only use the purely declarative yaml-files*.
 ----
 kubectl apply -f file.yml
 kubectl apply -f my-folder-with-lots-of-yaml/
 kubectl apply -f https://my-site.com/my.yml
 ----
-* using the purely declarative mode with yaml-files also allows versioning every change with Git (whereas using CLI-commands will not leave a trace to understand what has been done later on)
+* using the purely declarative mode with yaml-files also allows *versioning every change with Git* (whereas using
+CLI-commands will not leave a trace to understand what has been done later on)
+* If an application needs repeatedly executed tasks, don't use a *cron job* functionality directly in the container of
+the application. Instead, create another pod for that task. Because the main application can be executed
+on multiple pods, all of these pods would execute the cron job when it is implemented within the main application.
 
 
 == AWS
