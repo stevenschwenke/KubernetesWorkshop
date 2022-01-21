@@ -2,10 +2,7 @@
 
 = Kubernetes Workshop
 
-This repository consists of notes and links regarding Kubernetes with the **version of at least 1.18**. It is named
-"workshop", but can only
-be considered
-to be the base for a real workshop. The main source of this repository is the great https://www.udemy.com/course/learn-kubernetes[Udemy workshop Kubernetes for the Absolute Beginners by Mumshad Mannambeth] and the https://www.udemy.com/course/docker-mastery/[Docker Mastery: with Kubernetes +Swarm from a Docker Captain by Bret Fisher]
+This repository consists of notes and links regarding Kubernetes with the **version of at least 1.18**. It is named "workshop", but can only be considered to be the base for a real workshop. The main source of this repository is the great https://www.udemy.com/course/learn-kubernetes[Udemy workshop Kubernetes for the Absolute Beginners by Mumshad Mannambeth] and the https://www.udemy.com/course/docker-mastery/[Docker Mastery: with Kubernetes +Swarm from a Docker Captain by Bret Fisher]
 
 == Introduction
 * https://kubernetes.io/
@@ -21,7 +18,6 @@ based on the https://github.com/kubernetes/kubernetes[original GitHub version of
 * https://kubernetes.io/docs/concepts/overview/components/[official documentation]
 * *Node*
 ** = machine (physical or virtual)
-** in the past called "minions"
 ** has **kubelet**-agent on it so can interact with master (delivering health information to master, receiving commands
 from master) and also **kube-proxy**
 * *Cluster*
@@ -33,7 +29,6 @@ from master) and also **kube-proxy**
 ** has controller-manager and scheduler (for distributing work or containers across multiple nodes) on it to work with worker nodes
 * *kubectl* = "kube control" = CLI
 ** used to deploy and manage applications on a Kubernetes cluster
-** run application on cluster (creates a new deployment, replica set and pod)
 
 == Options for Using Kubernetes
 === Remotely via browser
@@ -62,8 +57,14 @@ from master) and also **kube-proxy**
 === Tooling
 * https://plugins.jetbrains.com/plugin/10485-kubernetes[Plugin for editing Kubernetes files in IntelliJ IDEA]
 
-== Writing yaml Files
-* because spec-part of yaml files differs heavily between different kinds of resources, hard to write yaml-files
+== yaml Template Files
+* Resources in Kubernetes created with yaml templates, consisting of the following 4 elements
+
+=== apiVersion
+* list all api-versions with
+----
+kubectl api-versions
+----
 
 === kind
 * list resources with
@@ -71,12 +72,6 @@ from master) and also **kube-proxy**
 kubectl api-resources
 ----
 * use values in column "KIND" in yaml-files
-
-=== apiVersion
-* list all api-versions with
-----
-kubectl api-versions
-----
 
 === metadata
 * only _name_ is required
@@ -105,6 +100,7 @@ kubectl explain deployment.spec.template.spec
 * containers inside a pod can talk to each other via localhost and share same storage
 
 === Defining Pod via CLI
+* disclaimer: defining resources via CLI is discouraged - resources should be created via yaml templates
 * a simple pod named mynginx which downloads the nginx image and runs it can be created with:
 ----
 kubectl run mynginx --image nginx
@@ -217,7 +213,7 @@ kubectl logs -l run=my-deployment
 
 
 == Replica Set
-* "replication controller" != "replica set" ! Replication controller deprecated, replaced by replica set
+* "replication controller" != "replica set"! "Replication controller" deprecated, replaced by replica set.
 * main task of replica set: "specified number of pods should be running!"
 * Replica set can be created directly and scaled like shown below. However, it's supposed to be managed by a deployment
 instead, via a yaml-file
@@ -364,6 +360,15 @@ kubectl rollout history deployment/myapp-deployment
 kubectl rollout undo deployment/myapp-deployment
 ----
 
+=== Deleting Resources
+* delete everything in folder with yaml-files:
+----
+$ kubectl delete -f .
+----
+* can be reversed with
+----
+$ kubectl apply -f .
+----
 
 == Network
 * nodes have IP addresses because they are physical machines
@@ -1000,6 +1005,7 @@ spec:
 ----
 * a config map is a dedicated Kubernetes resource separate from the application
 * hence, decoupling configuration from application
+* map itself is simply a key-value file
 
 === Secret
 
@@ -1015,6 +1021,7 @@ spec:
 * a secret is a dedicated Kubernetes resource
 * = key-value pairs
 * two levels of encryption: secret store is encrypted + values are encrypted
+* secret is read when pod is started
 
 == Best Practices and "Tricks"
 * *Label* all parts (deployments and services) of an application with the name of the application, so that all parts
@@ -1123,10 +1130,180 @@ $ kubectl config view
 * others available in/with Rancher, Docker Enterprise, OpenShift
 
 === Helm
+* https://helm.sh
+* *this workshop uses Helm 3*
 * https://www.youtube.com/watch?v=-ykwb1d0DXU[great introduction on YouTube]
 * Helm is
 ** a package manager for ready-to-use sets of Kubernetes resources and
 ** a templating engine for abstracting Kubernetes files
+* *Helm Chart* defines content of a release with templates
+* *Chart Values* add environment-specific data to the Templates
+* changes on the cluster through Helm are called *releases*
+
+==== Most Relevant Commands
+* helm *create* CHARTNAME - creates a scaffold chart
+* helm *install* - install a chart as a new release on a Kubernetes cluster
+* helm *upgrade* - updates an existing installed release on a Kubernetes cluster
+* helm *uninstall* - removes an existing release from a Kubernetes cluster
+* helm *list* - list all existing releases on a Kubernetes cluster
+* helm *status* - show status of existing release
+* helm *dependency update* - updates all dependencies to referenced subcharts of chart
+
+==== Walkthrough
+
+----
+$ helm create ssc-cxp-demo-helm-chart
+----
+
+This will create a new directory with content:
+----
+ssc-cxp-demo-helm-chart
+|- charts
+|- templates
+|  |- test
+|  |  |- test-connection.yaml
+|  | _helpers.tpl
+|  | deployment.yaml
+|  | hpa.yaml
+|  | ingress.yaml
+|  | NOTES.txt
+|  | service.yaml
+|  | serviceaccount.yaml
+| .helmignore
+| Chart.yaml
+| values.yaml
+----
+
+Verify modified Helm chart:
+----
+$ helm lint ssc-cxp-demo-helm-chart
+----
+
+Install Helm chart as a new _release_:
+
+----
+$ helm install ssc-cxp-demo-helm-chart ssc-cxp-demo-helm-chart --namespace cxp-team-heiterbiswolkig --debug --atomic
+----
+
+* first argument in command above is name of chart, second is directory with helm chart files in it, which are both
+"ssc-cxp-demo-helm-chart" in this example
+
+Debugging creation of new release with command line arguments:
+
+* _--debug_: displays the rendered Kubernetes manifests used to install your release (useful to troubleshooting!)
+* _--atomic_: waits for all pods to become ready within a certain period of time (5 minutes by default); automatically
+rolls back on timeout
+* _--dry-run_: simulates the install without actually performing it
+
+See status with
+
+----
+$ helm list --namespace cxp-team-heiterbiswolkig
+$ helm status ssc-cxp-demo-helm-chart --namespace cxp-team-heiterbiswolkig
+----
+
+Upgrade existing Helm release:
+----
+$ helm upgrade ssc-cxp-demo-helm-chart ssc-cxp-demo-helm-chart --namespace cxp-team-heiterbiswolkig --debug --atomic
+----
+
+* upgrades will only change the resources that have been changed instead of restarting all resources
+* in a pipeline, "upgrade --install" should be used so that non-existing deployments will be installed without
+differentiating between the "install"- and "upgrade"-commands
+
+Uninstall existing Helm release:
+----
+$ helm uninstall ssc-cxp-demo-helm-chart --namespace cxp-team-heiterbiswolkig --debug
+----
+
+==== Tooling
+* Use https://k8slens.dev[Lens] for managing Kubernetes resources
+
+==== Best Practices
+
+* **When using Helm, don't change the installation with kubectl! Instead, re-deploy changed Helm chart.**
+* debugging non-functional deployments only viable by analyzing with Lens while deploying - Helm cannot give useful error messages in case of non-functional Helm configuration
+* secrets should not be in the _values.yaml_, but be passed as argument for "helm upgrade"
+* *stages* are managed by having a _values-dev.yaml_ with only the values that should be overriden in _values.yaml_:
+----
+$ helm upgrade ... -values values-dev.yaml
+----
+* the command above takes the normal _values.yaml_ but also _values-dev.yaml_ and overrides all given values
+
+==== Reusing Charts
+* charts can be shared with community via chart repositories, for example https://artifacthub.io//[Artifact Hub]
+* charts can either be used directly or as sub-charts
+
+===== Reuse Chart Directly
+* add repo for new chart:
+----
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+----
+* alter values.yaml provided by chart
+* run helm install:
+----
+helm install cxp-postgres-direct bitnami/postgresql --namespace ${namespaceName} --values values.yaml --debug --atomic
+----
+
+===== Wrap Shared Chart as Sub-Chart
+* add repo for dependency-chart:
+----
+$ helm repo add bitnami https://charts.bitnami.com/bitnami
+----
+* create wrapper-chart:
+----
+$ helm create cxp-postgres-wrapped
+----
+* remove all files except chart.yaml, values.yaml, _helpers.tpl and .helmignore
+* add sub-chart as dependency in _chart.yaml_:
+
+[source, yaml]
+----
+apiVersion: v2
+name: cxp-postgresql-wrapped
+description: A wrapper chart for PostgreSQL
+version: 0.1.0
+appVersion: 11.16.0
+dependencies:
+  - name: postgresql
+    version: "8.8.0"
+    repository: "@bitnami"
+----
+
+* download external charts in _charts_-directory:
+----
+$ helm dependency update
+----
+----
+cxp-postgresql-wrapped
+|- charts
+|  | postgresql-8.8.0.tgz
+| .helmignore
+| Chart.yaml
+| values.yaml
+----
+
+* add values to sub-charts through own _values.yaml_: own values on top-level far left, values for dependencies under the name of the dependency:
+
+----
+# ----------------------------------
+# your own chart's values
+# ----------------------------------
+someValue: "123"
+# [..]
+
+# ----------------------------------
+# PostgreSQL subchart values
+# ----------------------------------
+postgresql:
+  image:
+    registry: docker.io
+    repository: bitnami/postgresql
+    tag: 11.7.0-debian-10-r73
+  # [..]
+----
+
+* when to use wrapper: when official chart doesn't include needed objects, then wrapper-chart can add those objects(like ingresses)
 
 == AWS
 Hints and notes for working with Kubernetes on AWS
