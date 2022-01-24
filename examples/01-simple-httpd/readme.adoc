@@ -1,0 +1,33 @@
+= Simple Webserver, but implemented with best practices
+
+Push image to Docker Hub:
+[source,terminal]
+----
+cd app
+docker build -t stevenschwenke/kubernetesworkshop01:latest .
+docker login
+docker push stevenschwenke/kubernetesworkshop01:latest
+----
+
+Start Kubernetes resources:
+[source,terminal]
+----
+cd ../kubernetes
+kubectl create -f 01-service-account.yml --namespace cxp-team-heiterbiswolkig
+kubectl create -f 01-deployment-definition.yml --namespace cxp-team-heiterbiswolkig
+kubectl create -f 01-service.yml --namespace cxp-team-heiterbiswolkig
+kubectl create -f 01-ingress.yml --namespace cxp-team-heiterbiswolkig
+----
+
+Check deployment:
+
+[source,terminal]
+----
+curl --insecure https://cxp.k8s.azure.msgoat.eu/cxp-team-heiterbiswolkig/ssc-01-simple-nginx/index.html
+----
+
+Remove everything:
+[source,terminal]
+----
+kubectl delete -f .
+----
