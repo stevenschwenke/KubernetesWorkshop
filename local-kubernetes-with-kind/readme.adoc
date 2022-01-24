@@ -1,3 +1,16 @@
+== General Information
+* https://kind.sigs.k8s.io[Website]
+* https://github.com/kubernetes-sigs/kind/[Open Source on Github]
+* https://landscape.cncf.io/?selected=kind[Kind in CNCF (Cloud Native Interactive Landscape)]
+
+In general, a Kubernetes cluster is started with the help of Docker. After starting a Kind cluster:
+
+----
+$ docker container ps
+CONTAINER ID   IMAGE                  COMMAND                  CREATED       STATUS       PORTS                       NAMES
+4f94409d1b75   kindest/node:v1.21.1   "/usr/local/bin/entr…"   3 hours ago   Up 3 hours   127.0.0.1:45301->6443/tcp   democluster-control-plane
+----
+
 == Installation of Kind on Ubuntu in WSL2
 
 * assumed already installed:
@@ -54,6 +67,48 @@ CURRENT   NAME               CLUSTER            AUTHINFO           NAMESPACE
 ----
 $ kubectl config use-context kind-democluster
 ----
+
+== Useful Kind-commands
+----
+$ kind -h
+$ kind get clusters
+$ kind create cluster --name cluster-to-delete
+$ kind delete cluster --name cluster-to-delete
+$ kind get nodes
+----
+
+== Configuration
+=== Multi-Node Cluster
+Cluster-creation can be configured via yaml-file, see https://kind.sigs.k8s.io/docs/user/configuration/[here], for
+example multi-node cluster like this:
+
+.multi-node-config.yaml
+[source, yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: multi-node-cluster
+nodes:
+  - role: control-plane
+  - role: worker
+  - role: worker
+  - role: worker
+----
+
+----
+$ kind create cluster --config multi-node-config.yaml
+----
+
+Created nodes:
+
+----
+$ kind get nodes --name multi-node-cluster
+multi-node-cluster-worker3
+multi-node-cluster-worker2
+multi-node-cluster-control-plane
+multi-node-cluster-worker
+----
+
 
 
 == Sources
