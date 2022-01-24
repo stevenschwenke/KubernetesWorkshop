@@ -1,0 +1,63 @@
+== Installation of Kind on Ubuntu in WSL2
+
+* assumed already installed:
+** Docker
+** kubectl
+
+=== Install Go
+** download with wget from https://go.dev/dl/
+** follow installation instructions for Linux at https://go.dev/doc/install
+
+=== Install Kind
+* see https://kind.sigs.k8s.io/docs/user/quick-start/#installing-from-release-binaries and copy file
+kind to /usr/local/bin
+
+
+=== First Usage
+* create cluster with
+
+[source, terminal]
+----
+$ kind create cluster --name democluster
+Creating cluster "democluster" ...
+ ✓ Ensuring node image (kindest/node:v1.21.1) 🖼
+ ✓ Preparing nodes 📦
+ ✓ Writing configuration 📜
+ ✓ Starting control-plane 🕹️
+ ✓ Installing CNI 🔌
+ ✓ Installing StorageClass 💾
+Set kubectl context to "kind-democluster"
+You can now use your cluster with:
+
+kubectl cluster-info --context kind-democluster
+
+Have a nice day! 👋
+----
+
+* the above sets kubectl context to "kind-democluster" so that all kubectl commands now target that cluster, see
+"democluster" in front of the node here:
+
+----
+$ kubectl get nodes
+NAME                        STATUS   ROLES                  AGE     VERSION
+democluster-control-plane   Ready    control-plane,master   5m33s   v1.21.1
+----
+
+* contexts are managed in /home/user/.kube/config
+* other contexts:
+----
+$ kubectl config get-contexts
+CURRENT   NAME               CLUSTER            AUTHINFO           NAMESPACE
+*         kind-democluster   kind-democluster   kind-democluster
+----
+* switch between contexts:
+----
+$ kubectl config use-context kind-democluster
+----
+
+
+== Sources
+* https://kind.sigs.k8s.io[Kind Homepage]
+* https://www.youtube.com/watch?v=m-IlbCgSzkc[How to run Kubernetes locally with Kind, That DevOps Guy, YouTube,
+10:48.], shows installation and examples
+
