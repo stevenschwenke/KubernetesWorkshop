@@ -179,6 +179,79 @@ $ curl localhost
 foo
 ----
 
+=== NodePort with Port Mappings
+See https://kind.sigs.k8s.io/docs/user/configuration/#nodeport-with-port-mappings[kind documentation here].
+
+First, establish nothing is running on localhost:80:
+----
+$ curl localhost
+curl: (52) Empty reply from server
+----
+
+Create cluster with extra port mappings:
+
+.config-with-port-mapping-2.yaml
+[source, yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30950
+    hostPort: 80
+----
+
+----
+$ kind create cluster --config config-with-port-mapping-2.yaml
+----
+
+Create pod and NodePort service that forwards the container's port 5678 to the node port 30950 which is mapped to host's port 80 by the port mapping in config-with-port-mapping-2.yaml above:
+
+.simple-http-pod-and-nodeport-service.yaml
+[source,yaml]
+----
+kind: Pod
+apiVersion: v1
+metadata:
+  name: foo
+  labels:
+    app: foo
+spec:
+  containers:
+  - name: foo
+    image: hashicorp/http-echo:0.2.3
+    args:
+    - "-text=foo"
+    ports:
+    - containerPort: 5678
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: foo
+spec:
+  type: NodePort
+  ports:
+  - name: http
+    nodePort: 30950
+    port: 5678
+  selector:
+    app: foo
+----
+
+----
+$ kubectl apply -f simple-http-pod-and-nodeport-service.yaml
+----
+
+*IMPORTANT*: Kind node's _containerPort_ has to be to equal the service's _nodePort_! In this example, this is port 30950.
+
+Check localhost again:
+
+----
+$ curl localhost
+foo
+----
 
 == Sources
 * https://kind.sigs.k8s.io[Kind Homepage]
