@@ -109,6 +109,75 @@ multi-node-cluster-control-plane
 multi-node-cluster-worker
 ----
 
+== Ingress Configuration
+* goal: reaching cluster from localhost
+
+=== Extra Port Mappings
+See https://kind.sigs.k8s.io/docs/user/configuration/#extra-port-mappings[kind documentation here].
+
+First, establish nothing is running on localhost:80:
+----
+$ curl localhost
+curl: (52) Empty reply from server
+----
+
+Create cluster with extra port mappings:
+
+.config-with-port-mapping.yaml
+[source, yaml]
+----
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: cluster-with-port-mapping
+nodes:
+  - role: control-plane
+    # port forward 80 on the host to 80 on this node
+    extraPortMappings:
+      - containerPort: 80
+        hostPort: 80
+        # optional: set the bind address on the host
+        # 0.0.0.0 is the current default
+        listenAddress: "127.0.0.1"
+        # optional: set the protocol to one of TCP, UDP, SCTP.
+        # TCP is the default
+        protocol: TCP
+
+----
+
+----
+$ kind create cluster --config config-with-port-mapping.yaml
+----
+
+Create pod that simply returns some text on port 80:
+
+.simple-http-pod.yaml
+[source,yaml]
+----
+kind: Pod
+apiVersion: v1
+metadata:
+  name: foo
+spec:
+  containers:
+    - name: foo
+      image: hashicorp/http-echo:0.2.3
+      args:
+        - "-text=foo"
+      ports:
+        - containerPort: 5678
+          hostPort: 80
+----
+
+----
+$ kubectl apply -f simple-http-pod.yaml
+----
+
+Check localhost again:
+
+----
+$ curl localhost
+foo
+----
 
 
 == Sources
