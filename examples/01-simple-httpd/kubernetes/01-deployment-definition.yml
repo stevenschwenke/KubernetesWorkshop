@@ -4,7 +4,6 @@ metadata:
   name: ssc-01-simple-nginx-deployment
   labels:
     app: stevens-simple-nginx
-  namespace: cxp-team-heiterbiswolkig
 spec:
   template:
     metadata:
@@ -18,7 +17,7 @@ spec:
           image: stevenschwenke/kubernetesworkshop01:latest
           ports:
           - containerPort: 80
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: stevens-simple-nginx

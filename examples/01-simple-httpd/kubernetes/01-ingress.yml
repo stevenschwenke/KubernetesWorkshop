@@ -6,10 +6,10 @@ metadata:
     nginx.ingress.kubernetes.io/rewrite-target: /$2
 spec:
   rules:
-  - host: cxp.k8s.azure.msgoat.eu
+  - host: localhost
     http:
       paths:
-      - path: /cxp-team-heiterbiswolkig/ssc-01-simple-nginx(/|$)(.*)
+      - path: /ssc-01-simple-nginx(/|$)(.*)
         pathType: Prefix
         backend:
           service:
