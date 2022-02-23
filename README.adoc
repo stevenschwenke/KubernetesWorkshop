@@ -166,7 +166,7 @@ kubectl delete deployment mynginx
 
 * example definition file:
 
-pod-definition.yml
+.pod-definition.yml
 [source,yaml]
 ----
 apiVersion: v1
@@ -232,7 +232,7 @@ kubectl logs -l run=my-deployment
 instead, via a yaml-file
 * creating replica set directly (not recommended!):
 
-replicaset-definition.yml
+.replicaset-definition.yml
 [source,yaml]
 ----
 apiVersion: apps/v1
@@ -311,7 +311,7 @@ kubectl delete pod mycreatedpod
 ** Conceptional, "deployment" in Kubernetes contains "Replica Set" which contain "Pods".
 * definition is exactly similar to definition of replica set, except for _kind_:
 
-deployment-definition.yml
+.deployment-definition.yml
 [source,yaml]
 ----
 apiVersion: apps/v1
@@ -422,7 +422,7 @@ directly from outside is impossible
 
 ==== Create ClusterIP Service via yml
 
-clusterip-service-definition.yml
+.clusterip-service-definition.yml
 [source,yaml]
 ----
 apiVersion: v1
@@ -503,7 +503,7 @@ kubectl get service
 
 ==== Create NodePort Service via yml
 
-service-definition.yml
+.service-definition.yml
 [source,yaml]
 ----
 apiVersion: v1
@@ -556,7 +556,7 @@ kubectl expose deployment/httpenv --port 8888 --name httpenv-np --type NodePort
 
 * https://stackoverflow.com/questions/48857092/how-to-expose-nginx-on-public-ip-using-nodeport-service-in-kubernetes[stackoverflow]: create https://kubernetes.io/docs/tasks/access-application-cluster/create-external-load-balancer/[external LoadBalancer]:
 
-loadbalancer-service-definition.yml
+.loadbalancer-service-definition.yml
 [source,yaml]
 ----
 apiVersion: v1
@@ -620,7 +620,7 @@ github repo], which is a fork of the repo used in one of the Udemy courses)
 
 The following example is the minimal set of resources needed for a simple, stateless application.
 
-The following files can be found in /complex-example-minimal-stateless-application:
+The following files can be found in the folder of the deployment for xref:complex-example-minimal-stateless-application/kubernetes/deployment-definition.yml[complex-example-minimal-stateless-application]:
 
 ----
 ├── app
@@ -635,15 +635,18 @@ The following files can be found in /complex-example-minimal-stateless-applicati
 ----
 
 === A httpd as a Simple Example Application
-The "application" that should be deployed lives in _app_ and consists only of an httpd server that serves a modified
-index.html, as can be seen in *app/Dockerfile*:
+The "application" that should be deployed lives in _app_ and consists only of an httpd server that serves a modified index.html, as can be seen here:
+
+.app/Dockerfile
+[source,terminal]
 ----
 from httpd
 
 COPY index.html /usr/local/apache2/htdocs/
 ----
 
-The *app/index.html* simply states some text:
+.app/index.html
+[source,html]
 ----
 Hello from Steven!
 ----
@@ -681,6 +684,8 @@ The ingress will expose the application outside the cluster.
 The network policy will allow inbound traffic to the application's pods.
 
 The *deployment-definition.yml* deploys the application above in two nodes with port 80 exposed:
+
+.deployment-definition.yml
 [source, yaml]
 ----
 apiVersion: apps/v1
@@ -716,6 +721,8 @@ private image repository.
 The *service.yml* creates a ClusterIP service (because that is the default when creating a service) that targets the
 pods with the label "stevens-first-kubernetes-app" and routes port 80 from within the cluster to port 80 of all the
 nodes:
+
+.service.yml
 [source, yaml]
 ----
 apiVersion: v1
@@ -733,6 +740,8 @@ spec:
 ----
 
 This *network-policy.yml* allows inbound traffic to all pods matching the given _matchLabels_:
+
+.network-policy.yml
 [source, yaml]
 ----
 kind: NetworkPolicy
@@ -812,8 +821,9 @@ data outlives nodes
 * limit scope
 * a.k.a. "virtual clusters"
 * not related to Docker/Linux namespaces
-* create a namespace with *namespace.yml*:
+* create a namespace:
 
+.namespace.yml
 [source, yaml]
 ----
 apiVersion: v1
@@ -850,8 +860,9 @@ kubectl -n mynamespace create -f .
 * scales number of pods in deployment or stateful set depending on metrics like CPU or memory consumption
 * added as a HPA resource to a deployment
 * _HPA Controller_ checks metrics on each application with an HPA resource every 15 seconds and takes action if necessary
-* creating the HPA resource:
+* creating the HPA resource with :xref:complex-example-minimal-stateless-application/kubernetes/horizontal-pod-autoscaler.yml[horizontal-pod-autoscaler.yml]:
 
+.horizontal-pod-autoscaler.yml
 [source, yaml]
 ----
 apiVersion: autoscaling/v2beta1
@@ -882,7 +893,9 @@ spec:
 === PodDiscruptionBudget
 * defines how many pods should be running at any given time if the cluster itself is under maintenance
 * if maintenance activity violates budget, Kubernetes refuses to execute this command
+* xref:complex-example-minimal-stateless-application/kubernetes/pod-disruption-budget.yml[pod-disruption-budget.yml]:
 
+.pod-disruption-budget.yml
 [source,yaml]
 ----
 apiVersion: policy/v1beta1
@@ -1062,6 +1075,7 @@ on multiple pods, all of these pods would execute the cron job when it is implem
 * kubeconfig usually named ${clusterName}.yaml and located in $Home/.kube or %USERPROFILE%\.kube
 * example kubeconfig-file:
 
+./.kube/config
 [source, yaml]
 ----
 apiVersion: v1
@@ -1272,6 +1286,7 @@ $ helm create cxp-postgres-wrapped
 * remove all files except chart.yaml, values.yaml, _helpers.tpl and .helmignore
 * add sub-chart as dependency in _chart.yaml_:
 
+.chart.yaml
 [source, yaml]
 ----
 apiVersion: v2
