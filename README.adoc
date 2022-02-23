@@ -2,7 +2,7 @@
 
 = Kubernetes Workshop
 
-This repository consists of notes and links regarding Kubernetes with the **version of at least 1.18**. It is named "workshop", but can only be considered to be the base for a real workshop. The main source of this repository is the great https://www.udemy.com/course/learn-kubernetes[Udemy workshop Kubernetes for the Absolute Beginners by Mumshad Mannambeth] and the https://www.udemy.com/course/docker-mastery/[Docker Mastery: with Kubernetes +Swarm from a Docker Captain by Bret Fisher]
+This repository consists of notes and links regarding Kubernetes with the **version of at least 1.18**. To create a real workshop from the material presented here, I recommend creating a customized learning path and a presentation. The main source of this repository is the great https://www.udemy.com/course/learn-kubernetes[Udemy workshop Kubernetes for the Absolute Beginners by Mumshad Mannambeth] and the https://www.udemy.com/course/docker-mastery/[Docker Mastery: with Kubernetes +Swarm from a Docker Captain by Bret Fisher].
 
 == Introduction
 * https://kubernetes.io/
@@ -30,7 +30,14 @@ from master) and also **kube-proxy**
 * *kubectl* = "kube control" = CLI
 ** used to deploy and manage applications on a Kubernetes cluster
 
+== Install kubectl
+* = main tool to interact with Kubernetes
+* easiest way: installation with https://www.docker.com/products/docker-desktop[Docker Desktop]
+* other installation options see https://kubernetes.io/releases/download/[official Kubernetes documentation]
+
 == Options for Using Kubernetes
+To be able to use _kubectl_, a connection to a cluster has to be established.
+
 === Remotely via browser
 ==== "Play with Kubernetes"
 * https://labs.play-with-k8s.com
@@ -46,15 +53,21 @@ from master) and also **kube-proxy**
 * Specialized Learn-by-Doing-Platform
 
 === Local Installation
-** https://kubernetes.io/docs/setup/learning-environment/minikube/[Minikube]
-*** "Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes cluster inside a Virtual Machine (VM) on your laptop for users looking to try out Kubernetes or develop with it day-to-day."
-** https://microk8s.io[microk8s]
-*** "A single package of k8s for 42 flavours of Linux. Made for developers, and great for edge, IoT and appliances."
+* https://kind.sigs.k8s.io[Kind]
+** see description and examples in xref:local-kubernetes-with-kind/readme.adoc[local-kubernetes-with-kind]
+** recommended way for this workshop
+* https://kubernetes.io/docs/setup/learning-environment/minikube/[Minikube]
+** "Minikube is a tool that makes it easy to run Kubernetes locally. Minikube runs a single-node Kubernetes cluster inside a Virtual Machine (VM) on your laptop for users looking to try out Kubernetes or develop with it day-to-day."
+* https://microk8s.io[microk8s]
+** "A single package of k8s for 42 flavours of Linux. Made for developers, and great for edge, IoT and appliances."
 
 === Hosting at Cloud Providers
 * install K8 yourself at Google Cloud Platform, AWS or Azure or use services such as EKS
 
-=== Tooling
+== Connect kubectl to cluster
+* after seting up a local cluster with the options above or creating a remote-running cluster, _kubectl_ has to connect to this cluster, see https://kubernetes.io/docs/tasks/access-application-cluster/access-cluster/[Accessing Clusters] in Kubernetes documentation
+
+== Tooling
 * https://plugins.jetbrains.com/plugin/10485-kubernetes[Plugin for editing Kubernetes files in IntelliJ IDEA]
 
 == yaml Template Files

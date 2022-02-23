@@ -1,4 +1,7 @@
-== General Information
+:toc:
+:toclevels: 3
+
+== Kind - General Information
 * Kind = "Kubernetes in Docker"
 * https://kind.sigs.k8s.io[Website]
 * https://github.com/kubernetes-sigs/kind/[Open Source on Github]
@@ -14,18 +17,48 @@ CONTAINER ID   IMAGE                  COMMAND                  CREATED       STA
 
 == Installation of Kind on Ubuntu in WSL2
 
-* assumed already installed:
+* assumed already installed, for example with https://www.docker.com/products/docker-desktop[Docker Desktop]:
 ** Docker
 ** kubectl
 
 === Install Go
-** download with wget from https://go.dev/dl/
-** follow installation instructions for Linux at https://go.dev/doc/install
+* Recommended way: use a package manager like apt-get. Alternatively, follow manual installation below:
+* download with wget from https://go.dev/dl/, for example:
+[source,terminal]
+----
+$ wget https://go.dev/dl/go1.17.7.linux-amd64.tar.gz
+----
+* follow installation instructions for Linux at https://go.dev/doc/install
+[source,terminal]
+----
+$ tar -zxvf go1.17.7.linux-amd64.tar.gz
+----
+* move _go_-folder to /usr/local/go
+[source,terminal]
+----
+$ mv go /usr/local/
+----
+* add _go_ to PATH: add the following line to $HOME/.profile:
+[source,text]
+----
+export PATH=$PATH:/usr/local/go/bin
+----
+* (if using WSL, you may need to restart your terminal window now)
+* test with
+[source,terminal]
+----
+$ go --version
+----
 
 === Install Kind
-* see https://kind.sigs.k8s.io/docs/user/quick-start/#installing-from-release-binaries and copy file
-kind to /usr/local/bin
-
+* see https://kind.sigs.k8s.io/docs/user/quick-start/#installing-from-release-binaries[Quick Start Installation]:
+[source, terminal]
+----
+$ curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.11.1/kind-linux-amd64
+$ chmod +x ./kind
+$ mv ./kind /usr/local/bin/kind
+$ kind --version
+----
 
 === First Usage
 * create cluster with
@@ -100,7 +133,7 @@ nodes:
 $ kind create cluster --config multi-node-config.yaml
 ----
 
-Created nodes:
+List created nodes:
 
 ----
 $ kind get nodes --name multi-node-cluster
@@ -121,6 +154,8 @@ First, establish nothing is running on localhost:80:
 $ curl localhost
 curl: (52) Empty reply from server
 ----
+
+==== Create Cluster
 
 Create cluster with extra port mappings:
 
@@ -148,6 +183,8 @@ nodes:
 ----
 $ kind create cluster --config config-with-port-mapping.yaml
 ----
+
+==== Test
 
 Create pod that simply returns some text on port 80:
 
@@ -189,6 +226,8 @@ $ curl localhost
 curl: (52) Empty reply from server
 ----
 
+==== Create Cluster
+
 Create cluster with extra port mappings:
 
 .config-with-port-mapping-2.yaml
@@ -206,6 +245,8 @@ nodes:
 ----
 $ kind create cluster --config config-with-port-mapping-2.yaml
 ----
+
+==== Create Services and Test
 
 Create pod and NodePort service that forwards the container's port 5678 to the node port 30950 which is mapped to host's port 80 by the port mapping in config-with-port-mapping-2.yaml above:
 
@@ -264,6 +305,8 @@ $ curl localhost
 curl: (52) Empty reply from server
 ----
 
+==== Create Cluster
+
 Create cluster with extra port mappings and node-labels:
 
 .config-with-port-mapping-and-node-labels.yaml
@@ -293,11 +336,15 @@ nodes:
 $ kind create cluster --config config-with-port-mapping-and-node-labels.yaml
 ----
 
-Setup ingress NGINX:
+* _extraPortMappings_: allow the local host to make requests to the Ingress controller over ports 80/443
+* _node-labels_: only allow the ingress controller to run on a specific node(s) matching the label selector
+
+==== Setup ingress NGINX
 
 ----
 kubectl apply -f https://raw.githubusercontent.com/kubernetes/ingress-nginx/main/deploy/static/provider/kind/deploy.yaml
 ----
+(this yaml is backuped xref:backup-nginx-ingress-script/[in this folder])
 
 Wait until ingress is ready:
 
@@ -308,9 +355,11 @@ kubectl wait --namespace ingress-nginx \
   --timeout=90s
 ----
 
+==== Test
+
 Create multiple pods and services for testing:
 
-.ingress-setup.yaml
+.ingress-test.yaml
 [source,yaml]
 ----
 kind: Pod
@@ -387,7 +436,7 @@ spec:
 ----
 
 ----
-$ kubectl apply -f ingress-setup.yaml
+$ kubectl apply -f ingress-test.yaml
 ----
 
 Check localhost again:
