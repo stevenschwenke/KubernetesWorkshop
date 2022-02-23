@@ -1231,6 +1231,8 @@ $ helm uninstall ssc-cxp-demo-helm-chart --namespace cxp-team-heiterbiswolkig --
 
 ==== Tooling
 * Use https://k8slens.dev[Lens] for managing Kubernetes resources
+* hint: after installing, press "skip" at the "Lens Spaces" Login-Page - no account required for using Lens!
+* The cluster created with Kind in WSL Ubuntu can be added to Lens by adding /home/your-user-name/.kube/config - file in Lens. To find it in Windows, execute "explorer.exe ." in Ubuntu. This will open a file explorer with the path of your current Ubuntu location.
 
 ==== Best Practices
 
