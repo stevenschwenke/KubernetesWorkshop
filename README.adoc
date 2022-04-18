@@ -1137,8 +1137,46 @@ $ kubectl config view
 
 == Tools
 === Lens
+==== General
 * https://k8slens.dev
 * Tool for monitoring and controlling Kubernetes clusters
+* important: select correct namespace!
+* works with most common Kubernetes distributions
+* "View Clusters in Catalog" analyses kubeonfig-file
+* Catalog: view all clusters + "pin" to hotbar on the left
+
+==== "Lens Metrics"
+* (show in local installation) Settings -> Lens Metrics
+* install metrics-stack directly from Lens into cluster
+* installation in namespace "lens-metrics"
+* creates nodes and enables metrics
+* deinstall also from settings dialog, formerly created resources are deleted
+
+==== SmartTerminal
+* at the bottom as a tab
+* connects in currently selected cluster instead of manual switch
+* in pod overview at the top right corner several buttons for shell in pod and others
+
+==== Warnings + Error Handling
+* in cluster view: list of issues with cluster
+* create resources directly in Lens via "+" besides SmartTerminal tab or scale deployments (buttons at top right corner) - however not recommended to alter cluster directly in Lens; use charts in version control instead!
+
+==== Browse Helm-Charts and Install from Repos
+* Add Helm Charts: File -> Preferences -> Kubernetes -> Helm Charts
+* Apps -> Charts -> deploy resources directly in cluster
+* Attention: only use charts from verified sources!
+
+==== Extensions
+* installation via File menu
+* for example
+** https://github.com/kubecost/kubecost-lens-extension[kubecost]
+** https://github.com/chenhunghan/lens-ext-invaders[space invaders to destroy pods]
+** https://github.com/nevalla/lens-resource-map-extension[resource map]
+
+==== Lens Spaces
+* centralized access to clusters
+* without having to share kubeconfig-file, manage access to cluster via centralized service
+* manage teams and access rights (like access to only specific namespaces)
 
 === Kubeadm
 * https://kubernetes.io/docs/reference/setup-tools/kubeadm/kubeadm/
